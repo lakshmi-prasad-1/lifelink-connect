@@ -323,6 +323,45 @@ export type Database = {
         }
         Relationships: []
       }
+      donor_matches: {
+        Row: {
+          created_at: string
+          donor_id: string
+          id: string
+          request_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          donor_id: string
+          id?: string
+          request_id: string
+          status: string
+        }
+        Update: {
+          created_at?: string
+          donor_id?: string
+          id?: string
+          request_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donor_matches_donor_id_fkey"
+            columns: ["donor_id"]
+            isOneToOne: false
+            referencedRelation: "donors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "donor_matches_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "blood_requests"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       emergency_posts: {
         Row: {
           blood_group: string | null

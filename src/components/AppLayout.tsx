@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   Heart, LayoutDashboard, Droplets, Search, Building2, AlertTriangle,
-  Trophy, Tent, LogOut, Menu, X, User
+  Trophy, Tent, LogOut, Menu, X, User, Inbox
 } from "lucide-react";
 import { useState } from "react";
 
@@ -12,6 +12,7 @@ const navItems = [
   { to: "/donor-registration", label: "Donate Blood", icon: Droplets },
   { to: "/blood-request", label: "Request Blood", icon: Search },
   { to: "/blood-banks", label: "Blood Banks", icon: Building2 },
+  { to: "/matching-requests", label: "Matching Requests", icon: Inbox },
   { to: "/emergency-feed", label: "Emergency Feed", icon: AlertTriangle },
   { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
   { to: "/donation-camps", label: "Camps", icon: Tent },
