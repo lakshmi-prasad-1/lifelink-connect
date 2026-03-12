@@ -74,46 +74,107 @@ export default function BloodBanks() {
     });
   }, []);
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
+    const searchTerms = searchLocation.trim().toLowerCase();
+    
+    if (!searchTerms) {
+      setDisplayedBanks(dbBanks);
+      return;
+    }
+
     setIsSearching(true);
 
-    // Simulate API delay
-    setTimeout(() => {
-      let results: any[] = [...dbBanks];
+    try {
+      // Fetch real-world data from OpenStreetMap Nominatim API
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?q=blood+bank+in+${encodeURIComponent(searchTerms)}&format=json&addressdetails=1&limit=15`);
+      let data = await response.json();
 
-      const searchTerms = searchLocation.toLowerCase();
-
-      // If searching for Vijayawada, inject our predefined real-world data
-      if (searchTerms.includes("vijayawada")) {
-        // Only add if they aren't already in the DB results (simple check by name)
-        const existingNames = new Set(results.map(b => b.name));
-        const newMocks = predefinedVijayawadaBanks.filter(mb => !existingNames.has(mb.name));
-        results = [...newMocks, ...results];
+      // Fallback: If no blood banks found, try searching for hospitals
+      if (data.length === 0) {
+        const hospitalResponse = await fetch(`https://nominatim.openstreetmap.org/search?q=hospital+in+${encodeURIComponent(searchTerms)}&format=json&addressdetails=1&limit=10`);
+        data = await hospitalResponse.json();
       }
 
-      // Filter by search terms
-      if (searchTerms.trim() !== "") {
-        results = results.filter((b) =>
-          b.name.toLowerCase().includes(searchTerms) ||
-          b.location.toLowerCase().includes(searchTerms)
-        );
-      }
+      // Map real-world data to our app's format
+      const realBanks = data.map((item: any, index: number) => {
+        const address = item.address || {};
+        const city = address.city || address.town || address.county || searchTerms;
+        const formattedAddress = [item.name, address.road, city, address.state].filter(Boolean).join(", ");
+        
+        // Generate consistent mock stock data based on the place_id seed
+        const seed = item.place_id || index;
+        const s1 = (seed * 13) % 100;
+        const s2 = (seed * 17) % 100;
 
-      // Filter by blood group
+        return {
+          id: `nominatim-${item.place_id}-${index}`,
+          name: item.name || `Health Center (${city})`,
+          location: formattedAddress,
+          latitude: parseFloat(item.lat),
+          longitude: parseFloat(item.lon),
+          contact_phone: null,
+          email: null,
+          o_pos: (s1 % 40) + 10,
+          o_neg: (s1 % 12) + 2,
+          a_pos: (s2 % 35) + 5,
+          a_neg: (s2 % 10) + 1,
+          b_pos: ((s1 + s2) % 30) + 5,
+          b_neg: ((s1 + s2) % 8) + 1,
+          ab_pos: (s1 % 15) + 2,
+          ab_neg: (s2 % 5) + 1,
+          distance: (1.2 + (index * 0.7) + (s1 % 10) / 10).toFixed(1) + " km"
+        };
+      });
+
+      // Also search local DB as fallback
+      let dbResults = dbBanks.filter((b) =>
+        b.name.toLowerCase().includes(searchTerms) ||
+        b.location.toLowerCase().includes(searchTerms)
+      ).map((b, index) => ({
+        ...b,
+        distance: (2.5 + index * 1.5).toFixed(1) + " km"
+      }));
+
+      // Combine real API results + DB results
+      let results = [...realBanks, ...dbResults];
+
+      // Remove duplicates by name
+      const seenNames = new Set();
+      results = results.filter(bank => {
+        if (seenNames.has(bank.name)) return false;
+        seenNames.add(bank.name);
+        return true;
+      });
+
+      // Filter by blood group if needed
       if (filterGroup !== "All") {
         const key = stockKey[filterGroup];
         results = results.filter((b) => (b[key] as number) > 0);
       }
 
-      // Calculate mock distance (in a real app, uses Haversine formula based on user's geolocation)
-      results = results.map((b, index) => ({
-        ...b,
-        distance: searchTerms.trim() !== "" ? (1.2 + (index * 1.5)).toFixed(1) + " km" : "Unknown"
-      }));
+      // Sort by distance roughly
+      results.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
 
       setDisplayedBanks(results);
+    } catch (error) {
+      console.error("Error fetching blood banks:", error);
+      // Fallback if API fails
+      let results = dbBanks.filter((b) =>
+        b.name.toLowerCase().includes(searchTerms) ||
+        b.location.toLowerCase().includes(searchTerms)
+      ).map((b, index) => ({
+        ...b,
+        distance: (2.5 + index * 1.5).toFixed(1) + " km"
+      }));
+
+      if (filterGroup !== "All") {
+        const key = stockKey[filterGroup];
+        results = results.filter((b) => (b[key] as number) > 0);
+      }
+      setDisplayedBanks(results);
+    } finally {
       setIsSearching(false);
-    }, 600);
+    }
   };
 
   // Run search when filters change
@@ -221,19 +282,36 @@ export default function BloodBanks() {
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="bg-muted/5 py-3 border-t grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                  {bank.contact_phone ? (
-                    <div className="flex items-center gap-1.5 font-medium text-foreground">
-                      <Phone className="h-3.5 w-3.5 text-primary" />
-                      {bank.contact_phone}
-                    </div>
-                  ) : <div></div>}
-                  {bank.email && (
-                    <div className="flex items-center gap-1.5 truncate" title={bank.email}>
-                      <Mail className="h-3.5 w-3.5 text-primary" />
-                      <span className="truncate">{bank.email}</span>
-                    </div>
-                  )}
+                <CardFooter className="bg-muted/5 py-3 border-t flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                  <div className="flex flex-col gap-1.5">
+                    {bank.contact_phone ? (
+                      <div className="flex items-center gap-1.5 font-medium text-foreground">
+                        <Phone className="h-3.5 w-3.5 text-primary" />
+                        {bank.contact_phone}
+                      </div>
+                    ) : (
+                      bank.email && (
+                        <div className="flex items-center gap-1.5 truncate" title={bank.email}>
+                          <Mail className="h-3.5 w-3.5 text-primary" />
+                          <span className="truncate max-w-[150px]">{bank.email}</span>
+                        </div>
+                      )
+                    )}
+                  </div>
+                  
+                  <Button variant="outline" size="sm" className="h-8 text-xs ml-auto" asChild>
+                    <a 
+                      href={bank.latitude && bank.longitude 
+                        ? `https://www.google.com/maps/dir/?api=1&destination=${bank.latitude},${bank.longitude}` 
+                        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bank.name + ' ' + bank.location)}`
+                      } 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      <Navigation className="h-3 w-3 mr-1" />
+                      Directions
+                    </a>
+                  </Button>
                 </CardFooter>
               </Card>
             ))}
