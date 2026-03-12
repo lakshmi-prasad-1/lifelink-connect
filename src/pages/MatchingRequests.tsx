@@ -39,11 +39,28 @@ export default function MatchingRequests() {
       }
       setDonor(donorData);
 
-      // 2. Fetch matching requests based on blood group and city
+      // Define compatible blood groups for donor
+      const getCompatibleBloodGroups = (donorGroup: string) => {
+        const map: Record<string, string[]> = {
+          "O-": ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"],
+          "O+": ["O+", "A+", "B+", "AB+"],
+          "A-": ["A-", "A+", "AB-", "AB+"],
+          "A+": ["A+", "AB+"],
+          "B-": ["B-", "B+", "AB-", "AB+"],
+          "B+": ["B+", "AB+"],
+          "AB-": ["AB-", "AB+"],
+          "AB+": ["AB+"]
+        };
+        return map[donorGroup] || [donorGroup];
+      };
+
+      const compatibleGroups = getCompatibleBloodGroups(donorData.blood_group);
+
+      // 2. Fetch matching requests based on compatible blood groups and city
       const { data: requestData, error: requestError } = await supabase
         .from("blood_requests")
         .select("*")
-        .eq("blood_group", donorData.blood_group)
+        .in("blood_group", compatibleGroups)
         .eq("hospital_location", donorData.city)
         .order("created_at", { ascending: false });
 
@@ -63,7 +80,7 @@ export default function MatchingRequests() {
       });
 
       setMatches(matchMap);
-      
+
       // Filter to only 'pending' requests or undefined default open ones 
       // where the user hasn't rejected them or accepted them (or we can show them with status)
       const openRequests = requestData?.filter(r => r.status === 'pending' || !r.status || r.status === 'open') || [];
@@ -207,17 +224,17 @@ export default function MatchingRequests() {
                         </Badge>
                       )}
                     </div>
-                    
+
                     {!isHandled && (
                       <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                           onClick={() => handleAction(req.id, "rejected")}
                         >
                           Reject
                         </Button>
-                        <Button 
+                        <Button
                           className="bg-primary hover:bg-primary/90"
                           onClick={() => handleAction(req.id, "accepted")}
                         >

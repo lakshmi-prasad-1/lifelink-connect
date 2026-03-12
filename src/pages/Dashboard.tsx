@@ -66,22 +66,24 @@ export default function Dashboard() {
         {/* Stats */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {[
-            { label: "Registered Donors", value: stats.donors, icon: Users, color: "text-primary" },
-            { label: "Open Requests", value: stats.requests, icon: Activity, color: "text-secondary" },
-            { label: "Active Emergencies", value: stats.emergencies, icon: AlertTriangle, color: "text-emergency" },
-            { label: "Upcoming Camps", value: stats.camps, icon: Tent, color: "text-success" },
+            { label: "Registered Donors", value: stats.donors, icon: Users, color: "text-primary", link: "/registered-donors" },
+            { label: "Open Requests", value: stats.requests, icon: Activity, color: "text-secondary", link: "/open-requests" },
+            { label: "Active Emergencies", value: stats.emergencies, icon: AlertTriangle, color: "text-emergency", link: "/emergency-feed" },
+            { label: "Upcoming Camps", value: stats.camps, icon: Tent, color: "text-success", link: "/donation-camps" },
           ].map((s) => (
-            <Card key={s.label}>
-              <CardContent className="flex items-center gap-3 p-4">
-                <div className={`rounded-lg bg-muted p-2.5 ${s.color}`}>
-                  <s.icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{s.value}</p>
-                  <p className="text-xs text-muted-foreground">{s.label}</p>
-                </div>
-              </CardContent>
-            </Card>
+            <Link key={s.label} to={s.link}>
+              <Card className="h-full transition-shadow hover:shadow-md cursor-pointer">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className={`rounded-lg bg-muted p-2.5 ${s.color}`}>
+                    <s.icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{s.value}</p>
+                    <p className="text-xs text-muted-foreground">{s.label}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
 

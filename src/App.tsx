@@ -12,6 +12,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import DonorRegistration from "./pages/DonorRegistration";
+import RegisteredDonors from "./pages/RegisteredDonors";
+import OpenRequests from "./pages/OpenRequests";
 import BloodRequest from "./pages/BloodRequest";
 import BloodBanks from "./pages/BloodBanks";
 import EmergencyFeed from "./pages/EmergencyFeed";
@@ -37,6 +39,8 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/registered-donors" element={<ProtectedRoute><RegisteredDonors /></ProtectedRoute>} />
+            <Route path="/open-requests" element={<ProtectedRoute><OpenRequests /></ProtectedRoute>} />
             <Route path="/donor-registration" element={<ProtectedRoute><DonorRegistration /></ProtectedRoute>} />
             <Route path="/blood-request" element={<ProtectedRoute><BloodRequest /></ProtectedRoute>} />
             <Route path="/blood-banks" element={<ProtectedRoute><BloodBanks /></ProtectedRoute>} />
