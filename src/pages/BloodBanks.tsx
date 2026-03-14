@@ -11,54 +11,11 @@ import type { Tables } from "@/integrations/supabase/types";
 
 const bloodGroups = ["All", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
+// DB stock column mapping
 const stockKey: Record<string, keyof Tables<"blood_banks">> = {
   "A+": "a_pos", "A-": "a_neg", "B+": "b_pos", "B-": "b_neg",
   "AB+": "ab_pos", "AB-": "ab_neg", "O+": "o_pos", "O-": "o_neg",
 };
-
-// Mock real-world data specifically requested for Vijayawada
-const predefinedVijayawadaBanks = [
-  {
-    id: "mock-1",
-    name: "Smile Blood Bank",
-    location: "Governor Peta, Vijayawada, Andhra Pradesh",
-    latitude: 16.5062,
-    longitude: 80.6480,
-    contact_phone: "+91 9876543210",
-    email: "contact@smilebloodbank.com",
-    o_pos: 45, o_neg: 12, a_pos: 30, a_neg: 5, b_pos: 25, b_neg: 8, ab_pos: 15, ab_neg: 3
-  },
-  {
-    id: "mock-2",
-    name: "Suraksha Voluntary Blood Bank",
-    location: "Suryaraopeta, Vijayawada, Andhra Pradesh",
-    latitude: 16.5085,
-    longitude: 80.6355,
-    contact_phone: "+91 9123456780",
-    email: "help@surakshabb.org",
-    o_pos: 20, o_neg: 4, a_pos: 15, a_neg: 2, b_pos: 40, b_neg: 6, ab_pos: 10, ab_neg: 1
-  },
-  {
-    id: "mock-3",
-    name: "New City Blood Bank",
-    location: "Labbipet, Vijayawada, Andhra Pradesh",
-    latitude: 16.5033,
-    longitude: 80.6465,
-    contact_phone: "+91 8888888888",
-    email: "info@newcitybb.com",
-    o_pos: 60, o_neg: 15, a_pos: 40, a_neg: 8, b_pos: 35, b_neg: 10, ab_pos: 20, ab_neg: 5
-  },
-  {
-    id: "mock-4",
-    name: "Government Blood Bank Vijayawada",
-    location: "Government General Hospital, Vijayawada",
-    latitude: 16.5144,
-    longitude: 80.6277,
-    contact_phone: "+91 866 2434343",
-    email: "gghvja.bb@gov.in",
-    o_pos: 100, o_neg: 25, a_pos: 80, a_neg: 15, b_pos: 70, b_neg: 20, ab_pos: 40, ab_neg: 10
-  }
-];
 
 export default function BloodBanks() {
   const [dbBanks, setDbBanks] = useState<any[]>([]);
@@ -75,103 +32,33 @@ export default function BloodBanks() {
   }, []);
 
   const handleSearch = async () => {
-    const searchTerms = searchLocation.trim().toLowerCase();
+    const searchTerms = searchLocation.trim();
     
-    if (!searchTerms) {
-      setDisplayedBanks(dbBanks);
-      return;
-    }
-
     setIsSearching(true);
 
     try {
-      // Fetch real-world data from OpenStreetMap Nominatim API
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?q=blood+bank+in+${encodeURIComponent(searchTerms)}&format=json&addressdetails=1&limit=15`);
-      let data = await response.json();
+      let query = supabase.from("blood_banks").select("*");
 
-      // Fallback: If no blood banks found, try searching for hospitals
-      if (data.length === 0) {
-        const hospitalResponse = await fetch(`https://nominatim.openstreetmap.org/search?q=hospital+in+${encodeURIComponent(searchTerms)}&format=json&addressdetails=1&limit=10`);
-        data = await hospitalResponse.json();
+      if (searchTerms) {
+        // Simple search string implementation, case-insensitive via ILIKE
+        query = query.ilike('location', `%${searchTerms}%`);
       }
 
-      // Map real-world data to our app's format
-      const realBanks = data.map((item: any, index: number) => {
-        const address = item.address || {};
-        const city = address.city || address.town || address.county || searchTerms;
-        const formattedAddress = [item.name, address.road, city, address.state].filter(Boolean).join(", ");
-        
-        // Generate consistent mock stock data based on the place_id seed
-        const seed = item.place_id || index;
-        const s1 = (seed * 13) % 100;
-        const s2 = (seed * 17) % 100;
-
-        return {
-          id: `nominatim-${item.place_id}-${index}`,
-          name: item.name || `Health Center (${city})`,
-          location: formattedAddress,
-          latitude: parseFloat(item.lat),
-          longitude: parseFloat(item.lon),
-          contact_phone: null,
-          email: null,
-          o_pos: (s1 % 40) + 10,
-          o_neg: (s1 % 12) + 2,
-          a_pos: (s2 % 35) + 5,
-          a_neg: (s2 % 10) + 1,
-          b_pos: ((s1 + s2) % 30) + 5,
-          b_neg: ((s1 + s2) % 8) + 1,
-          ab_pos: (s1 % 15) + 2,
-          ab_neg: (s2 % 5) + 1,
-          distance: (1.2 + (index * 0.7) + (s1 % 10) / 10).toFixed(1) + " km"
-        };
-      });
-
-      // Also search local DB as fallback
-      let dbResults = dbBanks.filter((b) =>
-        b.name.toLowerCase().includes(searchTerms) ||
-        b.location.toLowerCase().includes(searchTerms)
-      ).map((b, index) => ({
-        ...b,
-        distance: (2.5 + index * 1.5).toFixed(1) + " km"
-      }));
-
-      // Combine real API results + DB results
-      let results = [...realBanks, ...dbResults];
-
-      // Remove duplicates by name
-      const seenNames = new Set();
-      results = results.filter(bank => {
-        if (seenNames.has(bank.name)) return false;
-        seenNames.add(bank.name);
-        return true;
-      });
-
-      // Filter by blood group if needed
       if (filterGroup !== "All") {
         const key = stockKey[filterGroup];
-        results = results.filter((b) => (b[key] as number) > 0);
+        // Only return where that blood group has more than 0 units
+        query = query.gt(key as string, 0);
       }
 
-      // Sort by distance roughly
-      results.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+      const { data, error } = await query.order("name");
 
-      setDisplayedBanks(results);
+      if (error) throw error;
+      
+      setDisplayedBanks(data || []);
     } catch (error) {
       console.error("Error fetching blood banks:", error);
-      // Fallback if API fails
-      let results = dbBanks.filter((b) =>
-        b.name.toLowerCase().includes(searchTerms) ||
-        b.location.toLowerCase().includes(searchTerms)
-      ).map((b, index) => ({
-        ...b,
-        distance: (2.5 + index * 1.5).toFixed(1) + " km"
-      }));
-
-      if (filterGroup !== "All") {
-        const key = stockKey[filterGroup];
-        results = results.filter((b) => (b[key] as number) > 0);
-      }
-      setDisplayedBanks(results);
+      // Make sure UI still drops the mock API loading state
+      setDisplayedBanks([]);
     } finally {
       setIsSearching(false);
     }
@@ -234,7 +121,7 @@ export default function BloodBanks() {
           <Card className="border-dashed">
             <CardContent className="p-12 text-center text-muted-foreground flex flex-col items-center">
               <Building2 className="h-12 w-12 text-muted mb-4 opacity-50" />
-              <p className="text-lg font-medium">No blood banks found</p>
+              <p className="text-lg font-medium">No blood banks found in this city.</p>
               <p className="text-sm">Try searching for a different location like "Vijayawada"</p>
             </CardContent>
           </Card>

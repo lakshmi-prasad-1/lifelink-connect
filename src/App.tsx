@@ -21,6 +21,7 @@ import Leaderboard from "./pages/Leaderboard";
 import DonationCamps from "./pages/DonationCamps";
 import Profile from "./pages/Profile";
 import MatchingRequests from "./pages/MatchingRequests";
+import RequestResponses from "./pages/RequestResponses";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/donor-registration" element={<ProtectedRoute><DonorRegistration /></ProtectedRoute>} />
             <Route path="/blood-request" element={<ProtectedRoute><BloodRequest /></ProtectedRoute>} />
             <Route path="/blood-banks" element={<ProtectedRoute><BloodBanks /></ProtectedRoute>} />
+            <Route path="/request-responses" element={<ProtectedRoute><RequestResponses /></ProtectedRoute>} />
             <Route path="/matching-requests" element={<ProtectedRoute><MatchingRequests /></ProtectedRoute>} />
             <Route path="/emergency-feed" element={<ProtectedRoute><EmergencyFeed /></ProtectedRoute>} />
             <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />

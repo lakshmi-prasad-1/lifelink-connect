@@ -39,9 +39,9 @@ export default function MatchingRequests() {
       }
       setDonor(donorData);
 
-      // Define compatible blood groups for donor
-      const getCompatibleBloodGroups = (donorGroup: string) => {
-        const map: Record<string, string[]> = {
+      // Define what requests this donor can accept
+      const getRequestsDonorCanAccept = (donorGroup: string) => {
+        const canDonateTo: Record<string, string[]> = {
           "O-": ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"],
           "O+": ["O+", "A+", "B+", "AB+"],
           "A-": ["A-", "A+", "AB-", "AB+"],
@@ -51,16 +51,16 @@ export default function MatchingRequests() {
           "AB-": ["AB-", "AB+"],
           "AB+": ["AB+"]
         };
-        return map[donorGroup] || [donorGroup];
+        return canDonateTo[donorGroup] || [donorGroup];
       };
 
-      const compatibleGroups = getCompatibleBloodGroups(donorData.blood_group);
+      const groupsDonorCanAccept = getRequestsDonorCanAccept(donorData.blood_group);
 
       // 2. Fetch matching requests based on compatible blood groups and city
       const { data: requestData, error: requestError } = await supabase
         .from("blood_requests")
         .select("*")
-        .in("blood_group", compatibleGroups)
+        .in("blood_group", groupsDonorCanAccept)
         .eq("hospital_location", donorData.city)
         .order("created_at", { ascending: false });
 
@@ -232,10 +232,10 @@ export default function MatchingRequests() {
                           className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                           onClick={() => handleAction(req.id, "rejected")}
                         >
-                          Reject
+                          Decline Request
                         </Button>
                         <Button
-                          className="bg-primary hover:bg-primary/90"
+                          className="bg-success hover:bg-success/90"
                           onClick={() => handleAction(req.id, "accepted")}
                         >
                           Accept Request

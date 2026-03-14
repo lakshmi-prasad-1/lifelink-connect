@@ -9,10 +9,10 @@ export default function Index() {
       <header className="border-b border-border">
         <div className="container flex items-center justify-between py-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <Heart className="h-5 w-5 text-primary-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg overflow-hidden">
+              <img src="/favicon.png" alt="LifeLink Logo" className="h-full w-full object-cover" />
             </div>
-            <span className="font-heading text-lg font-bold">LifeLink AI</span>
+            <span className="font-heading text-lg font-bold">LifeLink</span>
           </div>
           <div className="flex items-center gap-3">
             <Link to="/signin"><Button variant="ghost">Sign In</Button></Link>
@@ -31,7 +31,7 @@ export default function Index() {
             Every Drop <span className="text-gradient-primary">Saves a Life</span>
           </h1>
           <p className="text-lg text-muted-foreground">
-            LifeLink AI connects blood donors, patients, hospitals, and blood banks through intelligent matching and real-time emergency coordination.
+            LifeLink connects blood donors, patients, hospitals, and blood banks through intelligent matching and real-time emergency coordination.
           </p>
           <div className="flex items-center justify-center gap-4">
             <Link to="/signup"><Button size="lg">Start Saving Lives <ArrowRight className="ml-2 h-4 w-4" /></Button></Link>
@@ -82,7 +82,7 @@ export default function Index() {
       {/* Footer */}
       <footer className="border-t border-border py-8">
         <div className="container text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} LifeLink AI. Saving lives through technology.</p>
+          <p>© {new Date().getFullYear()} LifeLink. Saving lives through technology.</p>
         </div>
       </footer>
     </div>

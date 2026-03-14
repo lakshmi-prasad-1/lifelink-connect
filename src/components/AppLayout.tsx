@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   Heart, LayoutDashboard, Droplets, Search, Building2, AlertTriangle,
-  Trophy, Tent, LogOut, Menu, X, User, Inbox
+  Trophy, Tent, LogOut, Menu, X, User, Inbox, Reply
 } from "lucide-react";
 import { useState } from "react";
 
@@ -12,6 +12,7 @@ const navItems = [
   { to: "/donor-registration", label: "Donate Blood", icon: Droplets },
   { to: "/blood-request", label: "Request Blood", icon: Search },
   { to: "/blood-banks", label: "Blood Banks", icon: Building2 },
+  { to: "/request-responses", label: "Request Responses", icon: Reply },
   { to: "/matching-requests", label: "Matching Requests", icon: Inbox },
   { to: "/emergency-feed", label: "Emergency Feed", icon: AlertTriangle },
   { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
@@ -35,10 +36,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex lg:w-64 lg:flex-col bg-card border-r border-border">
         <div className="flex items-center gap-2 px-6 py-5 border-b border-border">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <Heart className="h-5 w-5 text-primary-foreground" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg overflow-hidden">
+            <img src="/favicon.png" alt="LifeLink Logo" className="h-full w-full object-cover" />
           </div>
-          <span className="font-heading text-lg font-bold">LifeLink AI</span>
+          <span className="font-heading text-lg font-bold">LifeLink</span>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
           {navItems.map((item) => {
@@ -48,9 +49,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.to}
                 to={item.to}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                }`}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                  }`}
               >
                 <Icon className="h-4 w-4" />
                 {item.label}
@@ -70,10 +70,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 flex-col">
         <header className="flex items-center justify-between border-b border-border px-4 py-3 lg:hidden">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Heart className="h-4 w-4 text-primary-foreground" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg overflow-hidden">
+              <img src="/favicon.png" alt="LifeLink Logo" className="h-full w-full object-cover" />
             </div>
-            <span className="font-heading font-bold">LifeLink AI</span>
+            <span className="font-heading font-bold">LifeLink </span>
           </div>
           <Button variant="ghost" size="icon" onClick={() => setMobileOpen(!mobileOpen)}>
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}

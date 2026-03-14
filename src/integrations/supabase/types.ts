@@ -160,6 +160,7 @@ export type Database = {
       donation_camps: {
         Row: {
           camp_date: string
+          city: string | null
           contact_phone: string | null
           created_at: string
           current_registrations: number | null
@@ -176,6 +177,7 @@ export type Database = {
         }
         Insert: {
           camp_date: string
+          city?: string | null
           contact_phone?: string | null
           created_at?: string
           current_registrations?: number | null
@@ -192,6 +194,7 @@ export type Database = {
         }
         Update: {
           camp_date?: string
+          city?: string | null
           contact_phone?: string | null
           created_at?: string
           current_registrations?: number | null

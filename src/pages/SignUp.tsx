@@ -41,10 +41,10 @@ export default function SignUp() {
     <div className="flex min-h-screen items-center justify-center bg-muted p-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-            <Heart className="h-6 w-6 text-primary-foreground" />
+          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full overflow-hidden">
+            <img src="/favicon.png" alt="LifeLink Logo" className="h-full w-full object-cover" />
           </div>
-          <CardTitle className="font-heading text-2xl">Join LifeLink AI</CardTitle>
+          <CardTitle className="font-heading text-2xl">Join LifeLink</CardTitle>
           <CardDescription>Create your account and start saving lives</CardDescription>
         </CardHeader>
         <CardContent>

@@ -43,7 +43,7 @@ export default function DonationCamps() {
 
     if (user) {
       const { data: regs } = await supabase.from("camp_registrations").select("camp_id").eq("user_id", user.id);
-      setRegisteredCamps(new Set((regs ?? []).map(r => r.camp_id)));
+      setRegisteredCamps(new Set((regs ?? []).map((r: {camp_id: string}) => r.camp_id)));
     }
   };
 
@@ -73,11 +73,11 @@ export default function DonationCamps() {
     }
     setIsSubmitting(true);
     try {
-      const fullLocation = `${formData.location}, ${formData.city}`;
       const { error } = await supabase.from("donation_camps").insert({
         name: formData.name,
         organizer: formData.organization ? `${formData.organizer} (${formData.organization})` : formData.organizer,
-        location: fullLocation,
+        location: formData.location,
+        city: formData.city,
         contact_phone: formData.contact_phone,
         camp_date: formData.date,
         start_time: formData.start_time,
@@ -106,7 +106,10 @@ export default function DonationCamps() {
   };
 
   const filteredCamps = searchLocation
-    ? camps.filter(c => c.location.toLowerCase().includes(searchLocation.toLowerCase()))
+    ? camps.filter(c => 
+        c.location?.toLowerCase().includes(searchLocation.toLowerCase()) || 
+        c.city?.toLowerCase().includes(searchLocation.toLowerCase())
+      )
     : camps;
 
   return (
@@ -154,7 +157,7 @@ export default function DonationCamps() {
                       <div className="space-y-2 text-sm text-muted-foreground grid grid-cols-1">
                         <p className="flex items-start gap-2">
                           <MapPin className="h-4 w-4 shrink-0 text-primary mt-0.5" />
-                          <span>{camp.location}</span>
+                          <span>{camp.location}{camp.city ? `, ${camp.city}` : ''}</span>
                         </p>
                         <div className="grid grid-cols-2 gap-2">
                           <p className="flex items-center gap-2">
