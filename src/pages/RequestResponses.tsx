@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Users, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { getCompatibleDonorGroups, normalizeLocation } from "@/lib/bloodMatching";
 
 export default function RequestResponses() {
   const { user } = useAuth();
@@ -30,38 +31,26 @@ export default function RequestResponses() {
       // 1. Fetch user's blood requests
       const { data: userRequests, error: reqError } = await supabase
         .from("blood_requests")
-        .select("id, blood_group, hospital_location")
+        .select("id, blood_group, hospital_location, urgency")
         .eq("requester_id", user!.id);
 
       if (reqError) throw reqError;
 
-      // Reverse compatibility for calculating "Notified Donors"
-      const getEligibleDonorGroups = (requestGroup: string) => {
-        const map: Record<string, string[]> = {
-          "O-": ["O-"],
-          "O+": ["O-", "O+"],
-          "A-": ["O-", "A-"],
-          "A+": ["O-", "O+", "A-", "A+"],
-          "B-": ["O-", "B-"],
-          "B+": ["O-", "O+", "B-", "B+"],
-          "AB-": ["O-", "A-", "B-", "AB-"],
-          "AB+": ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"]
-        };
-        return map[requestGroup] || [requestGroup];
-      };
-
       // Calculate total notified donors
       let totalNotifiedCount = 0;
       for (const req of userRequests || []) {
-        const eligibleGroups = getEligibleDonorGroups(req.blood_group);
-        const { count, error: countError } = await supabase
+        const eligibleGroups = getCompatibleDonorGroups(req.blood_group);
+        const allowedAvailability = req.urgency === "critical" ? ["available", "emergency_only"] : ["available"];
+        const { data: donors, error: countError } = await supabase
           .from("donors")
-          .select("*", { count: "exact", head: true })
+          .select("id, city")
           .in("blood_group", eligibleGroups)
-          .eq("city", req.hospital_location);
+          .in("availability", allowedAvailability)
+          .neq("user_id", user!.id);
         
-        if (!countError && count) {
-          totalNotifiedCount += count;
+        if (!countError && donors) {
+          const normalizedRequestCity = normalizeLocation(req.hospital_location);
+          totalNotifiedCount += donors.filter((donor) => normalizeLocation(donor.city) === normalizedRequestCity).length;
         }
       }
       
@@ -106,7 +95,7 @@ export default function RequestResponses() {
       let declinedCount = 0;
       let pendingCount = 0;
 
-      let mappedResponses = responsesData?.map(r => {
+      const mappedResponses = responsesData?.map(r => {
         let mappedStatus = "Pending";
         if (r.status === "accepted") mappedStatus = "Accepted";
         else if (r.status === "rejected") mappedStatus = "Declined";
@@ -124,8 +113,8 @@ export default function RequestResponses() {
         ...prev,
         accepted: acceptedCount,
         declined: declinedCount,
-        pending: prev.totalNotified - (acceptedCount + declinedCount) > 0 
-          ? prev.totalNotified - (acceptedCount + declinedCount) 
+        pending: totalNotifiedCount - (acceptedCount + declinedCount) > 0 
+          ? totalNotifiedCount - (acceptedCount + declinedCount) 
           : 0,
       }));
 

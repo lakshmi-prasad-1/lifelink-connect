@@ -13,16 +13,9 @@ import { Loader2, Search, Users, Filter, SlidersHorizontal, Eye } from "lucide-r
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { getCompatibleDonorGroups, isDonorEligible, normalizeLocation } from "@/lib/bloodMatching";
 
 const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
-
-function isDonorEligible(lastDonation: string | null): boolean {
-  if (!lastDonation) return true;
-  const last = new Date(lastDonation);
-  const now = new Date();
-  const diffDays = (now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24);
-  return diffDays >= 90;
-}
 
 export default function BloodRequest() {
   const { user } = useAuth();
@@ -68,17 +61,26 @@ export default function BloodRequest() {
     if (error) { toast.error(error.message); setLoading(false); return; }
 
     // Smart donor matching
+    const compatibleBloodGroups = getCompatibleDonorGroups(form.blood_group);
+    const normalizedHospitalLocation = normalizeLocation(form.hospital_location);
+    const allowedAvailability = form.urgency === "critical" ? ["available", "emergency_only"] : ["available"];
+
     const { data: donors } = await supabase
       .from("donors")
       .select("*")
-      .eq("blood_group", form.blood_group)
-      .in("availability", form.urgency === "critical" ? ["available", "emergency_only"] : ["available"])
+      .in("blood_group", compatibleBloodGroups)
+      .in("availability", allowedAvailability)
+      .neq("user_id", user!.id)
       .order("last_donation_date", { ascending: true, nullsFirst: true });
 
-    setMatchedDonors(donors ?? []);
+    const matchingDonors = (donors ?? []).filter((donor) => (
+      normalizeLocation(donor.city) === normalizedHospitalLocation
+    ));
+
+    setMatchedDonors(matchingDonors);
     setSubmitted(true);
     setLoading(false);
-    toast.success("Blood request created! Found matching donors.");
+    toast.success(`Blood request created! Found ${matchingDonors.length} matching donor${matchingDonors.length === 1 ? "" : "s"}.`);
   };
 
   const displayedDonors = matchedDonors

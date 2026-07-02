@@ -5,8 +5,9 @@ import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MapPin, Phone, Hospital, User, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, Phone, Hospital, User, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import { getCompatibleRecipientGroups, isDonorEligible, normalizeLocation } from "@/lib/bloodMatching";
 
 export default function MatchingRequests() {
   const { user } = useAuth();
@@ -39,29 +40,21 @@ export default function MatchingRequests() {
       }
       setDonor(donorData);
 
-      // Define what requests this donor can accept
-      const getRequestsDonorCanAccept = (donorGroup: string) => {
-        const canDonateTo: Record<string, string[]> = {
-          "O-": ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"],
-          "O+": ["O+", "A+", "B+", "AB+"],
-          "A-": ["A-", "A+", "AB-", "AB+"],
-          "A+": ["A+", "AB+"],
-          "B-": ["B-", "B+", "AB-", "AB+"],
-          "B+": ["B+", "AB+"],
-          "AB-": ["AB-", "AB+"],
-          "AB+": ["AB+"]
-        };
-        return canDonateTo[donorGroup] || [donorGroup];
-      };
+      if (donorData.availability === "busy" || !isDonorEligible(donorData.last_donation_date)) {
+        setRequests([]);
+        setMatches({});
+        return;
+      }
 
-      const groupsDonorCanAccept = getRequestsDonorCanAccept(donorData.blood_group);
+      const groupsDonorCanAccept = getCompatibleRecipientGroups(donorData.blood_group);
 
       // 2. Fetch matching requests based on compatible blood groups and city
       const { data: requestData, error: requestError } = await supabase
         .from("blood_requests")
         .select("*")
         .in("blood_group", groupsDonorCanAccept)
-        .eq("hospital_location", donorData.city)
+        .eq("status", "open")
+        .neq("requester_id", user!.id)
         .order("created_at", { ascending: false });
 
       if (requestError) throw requestError;
@@ -81,9 +74,12 @@ export default function MatchingRequests() {
 
       setMatches(matchMap);
 
-      // Filter to only 'pending' requests or undefined default open ones 
-      // where the user hasn't rejected them or accepted them (or we can show them with status)
-      const openRequests = requestData?.filter(r => r.status === 'pending' || !r.status || r.status === 'open') || [];
+      const normalizedDonorCity = normalizeLocation(donorData.city);
+      const openRequests = (requestData || []).filter((request) => {
+        const cityMatches = normalizeLocation(request.hospital_location) === normalizedDonorCity;
+        const availabilityMatches = donorData.availability === "available" || request.urgency === "critical";
+        return cityMatches && availabilityMatches;
+      });
       setRequests(openRequests);
 
     } catch (error: any) {
