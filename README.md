@@ -250,6 +250,19 @@ VITE_SUPABASE_PUBLISHABLE_KEY
 
 Do not commit `.env` files or private Supabase service role keys.
 
+### Vercel deployment
+
+Vite reads `VITE_*` variables at **build time**, so they must be set in the Vercel dashboard before each deploy picks them up:
+
+1. Open your project on [vercel.com](https://vercel.com) → **Settings** → **Environment Variables**
+2. Add these for **Production**, **Preview**, and **Development**:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_PUBLISHABLE_KEY`
+   - `VITE_SUPABASE_PROJECT_ID` (optional)
+3. **Redeploy** the project (Deployments → ⋯ → Redeploy)
+
+Values are the same as in your local `.env` file (copy from Supabase → Project Settings → API).
+
 ## Database
 
 The database is Supabase PostgreSQL. Migrations live in `supabase/migrations`.
