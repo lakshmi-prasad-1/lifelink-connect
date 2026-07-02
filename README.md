@@ -2,6 +2,11 @@
 
 A location-aware blood donation matching platform that connects eligible donors with urgent hospital blood requests using real transfusion compatibility rules.
 
+# 🚀 Live Demo
+🔗 **Project URL:** lifelink-connect-psi.vercel.app 
+
+> Experience the application live by visiting the link above.
+> 
 ## Table of Contents
 
 - [Overview](#overview)
