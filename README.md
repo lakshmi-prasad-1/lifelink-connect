@@ -1,4 +1,4 @@
-# Lifeline Link
+# LifeLink AI  
 
 A location-aware blood donation matching platform that connects eligible donors with urgent hospital blood requests using real transfusion compatibility rules.
 
@@ -28,9 +28,9 @@ A location-aware blood donation matching platform that connects eligible donors 
 
 ## Overview
 
-Lifeline Link helps voluntary blood donors, requesters, and community coordinators respond faster during blood shortage situations. The app lets authenticated users register as donors, create blood requests, find compatible donors in the same city, respond to matching requests, search blood bank stock, publish emergency posts, and manage blood donation camps.
+LifeLink AI  helps voluntary blood donors, requesters, and community coordinators respond faster during blood shortage situations. The app lets authenticated users register as donors, create blood requests, find compatible donors in the same city, respond to matching requests, search blood bank stock, publish emergency posts, and manage blood donation camps.
 
-The project addresses a real operational problem: blood supply is often fragmented across donors, hospitals, blood banks, and community networks. Lifeline Link centralizes donor availability, biological compatibility, location filtering, and request response tracking in one Supabase-backed web application.
+The project addresses a real operational problem: blood supply is often fragmented across donors, hospitals, blood banks, and community networks. LifeLink AI  centralizes donor availability, biological compatibility, location filtering, and request response tracking in one Supabase-backed web application.
 
 Intended users include:
 
@@ -91,7 +91,7 @@ Intended users include:
 
 ## Architecture
 
-Lifeline Link is a client-rendered React application backed directly by Supabase. There is no separate Express or Next.js API layer in this repository. Authenticated frontend pages call Supabase tables through the typed client in `src/integrations/supabase/client.ts`, while access control is enforced by Supabase Auth and database RLS policies.
+LifeLink AI  is a client-rendered React application backed directly by Supabase. There is no separate Express or Next.js API layer in this repository. Authenticated frontend pages call Supabase tables through the typed client in `src/integrations/supabase/client.ts`, while access control is enforced by Supabase Auth and database RLS policies.
 
 High-level flow:
 
