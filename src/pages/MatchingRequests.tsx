@@ -7,6 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Loader2, MapPin, Phone, Hospital, User, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { getCompatibleRecipientGroups } from "@/lib/bloodCompatibility";
 
 export default function MatchingRequests() {
   const { user } = useAuth();
@@ -39,22 +44,7 @@ export default function MatchingRequests() {
       }
       setDonor(donorData);
 
-      // Define compatible blood groups for donor
-      const getCompatibleBloodGroups = (donorGroup: string) => {
-        const map: Record<string, string[]> = {
-          "O-": ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"],
-          "O+": ["O+", "A+", "B+", "AB+"],
-          "A-": ["A-", "A+", "AB-", "AB+"],
-          "A+": ["A+", "AB+"],
-          "B-": ["B-", "B+", "AB-", "AB+"],
-          "B+": ["B+", "AB+"],
-          "AB-": ["AB-", "AB+"],
-          "AB+": ["AB+"]
-        };
-        return map[donorGroup] || [donorGroup];
-      };
-
-      const compatibleGroups = getCompatibleBloodGroups(donorData.blood_group);
+      const compatibleGroups = getCompatibleRecipientGroups(donorData.blood_group);
 
       // 2. Fetch matching requests based on compatible blood groups and city
       const { data: requestData, error: requestError } = await supabase
@@ -227,19 +217,56 @@ export default function MatchingRequests() {
 
                     {!isHandled && (
                       <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                          onClick={() => handleAction(req.id, "rejected")}
-                        >
-                          Reject
-                        </Button>
-                        <Button
-                          className="bg-primary hover:bg-primary/90"
-                          onClick={() => handleAction(req.id, "accepted")}
-                        >
-                          Accept Request
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              Reject
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Reject this request?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {req.patient_name} needs {req.blood_group} blood at {req.hospital_name}. You won't see this request again in your matching list.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                onClick={() => handleAction(req.id, "rejected")}
+                              >
+                                Reject Request
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button className="bg-primary hover:bg-primary/90">
+                              Accept Request
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Accept this donation request?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                You're committing to donate {req.blood_group} blood for {req.patient_name} at {req.hospital_name}
+                                {req.contact_phone ? ` (contact: ${req.contact_phone})` : ""}. Only accept if you're actually able to donate soon.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleAction(req.id, "accepted")}>
+                                Yes, Accept
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     )}
                   </CardFooter>

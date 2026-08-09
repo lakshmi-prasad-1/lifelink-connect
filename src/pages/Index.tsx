@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Heart, Droplets, Users, Shield, ArrowRight, Activity, Building2 } from "lucide-react";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 export default function Index() {
+  useDocumentTitle("Every Drop Saves a Life");
   return (
     <div className="min-h-screen bg-background">
       {/* Hero */}

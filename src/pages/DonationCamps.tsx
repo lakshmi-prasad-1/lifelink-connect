@@ -18,6 +18,7 @@ export default function DonationCamps() {
   const [camps, setCamps] = useState<any[]>([]);
   const [registeredCamps, setRegisteredCamps] = useState<Set<string>>(new Set());
   const [registering, setRegistering] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState<string | null>(null);
 
   // Search State
   const [searchLocation, setSearchLocation] = useState("");
@@ -61,7 +62,25 @@ export default function DonationCamps() {
     } else {
       toast.success("Registered for camp!");
       setRegisteredCamps(prev => new Set(prev).add(campId));
-      fetchCamps(); // to maybe increment current_registrations if we tracked that with a trigger
+      fetchCamps(); // current_registrations is kept in sync by a DB trigger
+    }
+  };
+
+  const handleCancelRegistration = async (campId: string) => {
+    if (!user) return;
+    setCancelling(campId);
+    const { error } = await supabase.from("camp_registrations").delete().eq("camp_id", campId).eq("user_id", user.id);
+    setCancelling(null);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Registration cancelled");
+      setRegisteredCamps(prev => {
+        const next = new Set(prev);
+        next.delete(campId);
+        return next;
+      });
+      fetchCamps();
     }
   };
 
@@ -75,6 +94,7 @@ export default function DonationCamps() {
     try {
       const fullLocation = `${formData.location}, ${formData.city}`;
       const { error } = await supabase.from("donation_camps").insert({
+        created_by: user.id,
         name: formData.name,
         organizer: formData.organization ? `${formData.organizer} (${formData.organization})` : formData.organizer,
         location: fullLocation,
@@ -178,15 +198,26 @@ export default function DonationCamps() {
                       {camp.description && <p className="text-sm border-t pt-3 text-foreground/80">{camp.description}</p>}
                     </CardContent>
                     <div className="p-4 pt-0">
-                      <Button
-                        className="w-full"
-                        variant={registeredCamps.has(camp.id) ? "outline" : "default"}
-                        disabled={registeredCamps.has(camp.id) || registering === camp.id}
-                        onClick={() => handleRegister(camp.id)}
-                      >
-                        {registering === camp.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        {registeredCamps.has(camp.id) ? "Registered ✓" : "Register Now"}
-                      </Button>
+                      {registeredCamps.has(camp.id) ? (
+                        <Button
+                          className="w-full"
+                          variant="outline"
+                          disabled={cancelling === camp.id}
+                          onClick={() => handleCancelRegistration(camp.id)}
+                        >
+                          {cancelling === camp.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                          Cancel Registration
+                        </Button>
+                      ) : (
+                        <Button
+                          className="w-full"
+                          disabled={registering === camp.id}
+                          onClick={() => handleRegister(camp.id)}
+                        >
+                          {registering === camp.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                          Register Now
+                        </Button>
+                      )}
                     </div>
                   </Card>
                 ))}

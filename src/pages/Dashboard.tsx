@@ -15,9 +15,11 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ donors: 0, requests: 0, emergencies: 0, camps: 0 });
   const [recentRequests, setRecentRequests] = useState<any[]>([]);
   const [recentEmergencies, setRecentEmergencies] = useState<any[]>([]);
+  const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {
     async function load() {
+      setLoadingStats(true);
       const [donorsRes, requestsRes, emergencyRes, campsRes] = await Promise.all([
         supabase.from("donors").select("id", { count: "exact", head: true }),
         supabase.from("blood_requests").select("id", { count: "exact", head: true }).eq("status", "open"),
@@ -30,6 +32,7 @@ export default function Dashboard() {
         emergencies: emergencyRes.count ?? 0,
         camps: campsRes.count ?? 0,
       });
+      setLoadingStats(false);
 
       const { data: reqs } = await supabase.from("blood_requests").select("*").eq("status", "open").order("created_at", { ascending: false }).limit(5);
       setRecentRequests(reqs ?? []);
@@ -65,7 +68,19 @@ export default function Dashboard() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {[
+          {loadingStats ? (
+            [1, 2, 3, 4].map((i) => (
+              <Card key={i} className="h-full">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="h-10 w-10 rounded-lg bg-muted animate-pulse" />
+                  <div className="space-y-2">
+                    <div className="h-5 w-10 rounded bg-muted animate-pulse" />
+                    <div className="h-3 w-20 rounded bg-muted animate-pulse" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : [
             { label: "Registered Donors", value: stats.donors, icon: Users, color: "text-primary", link: "/registered-donors" },
             { label: "Open Requests", value: stats.requests, icon: Activity, color: "text-secondary", link: "/open-requests" },
             { label: "Active Emergencies", value: stats.emergencies, icon: AlertTriangle, color: "text-emergency", link: "/emergency-feed" },

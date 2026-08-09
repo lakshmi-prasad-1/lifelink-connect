@@ -1,11 +1,14 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Heart, LayoutDashboard, Droplets, Search, Building2, AlertTriangle,
   Trophy, Tent, LogOut, Menu, X, User, Inbox
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import type { Tables } from "@/integrations/supabase/types";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -24,6 +27,37 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    const current = navItems.find((item) => item.to === location.pathname);
+    document.title = current ? `${current.label} · LifeLink AI` : "LifeLink AI";
+  }, [location.pathname]);
+
+  // App-wide broadcast: alert whoever's logged in, wherever they are, the
+  // instant a critical emergency post goes up (the Emergency Feed page
+  // itself shows the same event inline, so it's skipped here to avoid a
+  // duplicate toast).
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel("app-emergency-broadcast")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "emergency_posts", filter: "urgency=eq.critical" },
+        (payload) => {
+          if (location.pathname === "/emergency-feed") return;
+          const post = payload.new as Tables<"emergency_posts">;
+          toast.error(`Critical: ${post.title}`, {
+            description: post.location || "Check the Emergency Feed for details",
+            action: { label: "View", onClick: () => navigate("/emergency-feed") },
+          });
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const handleLogout = async () => {
     await signOut();
