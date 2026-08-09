@@ -31,11 +31,6 @@ export default function BloodRequest() {
     urgency: "normal", units_needed: "1", contact_phone: "", notes: "",
   });
 
-  // Supabase Email Testing Tip:
-  // If you repeatedly sign up during testing and hit email rate limits, 
-  // you can use Gmail aliases (e.g., myemail+donor@gmail.com, myemail+requester@gmail.com) 
-  // to avoid hitting the "email already used" limit while developing locally.
-
   const handleChange = (field: string, value: string) => setForm((p) => ({ ...p, [field]: value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,7 +55,24 @@ export default function BloodRequest() {
 
     if (error) { toast.error(error.message); setLoading(false); return; }
 
-    // Smart donor matching
+    // Broadcast critical requests to the Emergency Feed so nearby donors see
+    // them immediately, without waiting for someone to browse Open Requests
+    if (form.urgency === "critical") {
+      await supabase.from("emergency_posts").insert({
+        user_id: user!.id,
+        post_type: "donor_request",
+        title: `Critical: ${form.blood_group} needed for ${form.patient_name}`,
+        description: `${form.units_needed} unit(s) of ${form.blood_group} urgently needed at ${form.hospital_name}.${form.notes ? ` ${form.notes}` : ""}`,
+        location: form.hospital_location,
+        urgency: "critical",
+        blood_group: form.blood_group,
+        contact_phone: form.contact_phone || null,
+      });
+    }
+
+    // Smart donor matching — match every blood group that's actually compatible
+    // with this patient, not just an exact type match (e.g. an O- donor can
+    // give to any patient, but a plain equality check would miss them)
     const compatibleBloodGroups = getCompatibleDonorGroups(form.blood_group);
     const normalizedHospitalLocation = normalizeLocation(form.hospital_location);
     const allowedAvailability = form.urgency === "critical" ? ["available", "emergency_only"] : ["available"];

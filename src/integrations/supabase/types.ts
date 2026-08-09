@@ -163,6 +163,7 @@ export type Database = {
           city: string | null
           contact_phone: string | null
           created_at: string
+          created_by: string | null
           current_registrations: number | null
           description: string | null
           end_time: string | null
@@ -180,6 +181,7 @@ export type Database = {
           city?: string | null
           contact_phone?: string | null
           created_at?: string
+          created_by?: string | null
           current_registrations?: number | null
           description?: string | null
           end_time?: string | null
@@ -197,6 +199,7 @@ export type Database = {
           city?: string | null
           contact_phone?: string | null
           created_at?: string
+          created_by?: string | null
           current_registrations?: number | null
           description?: string | null
           end_time?: string | null
@@ -417,6 +420,7 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          is_admin: boolean
           phone: string | null
           updated_at: string
           user_id: string
@@ -427,6 +431,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          is_admin?: boolean
           phone?: string | null
           updated_at?: string
           user_id: string
@@ -437,6 +442,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          is_admin?: boolean
           phone?: string | null
           updated_at?: string
           user_id?: string

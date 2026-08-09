@@ -7,15 +7,31 @@ import { Button } from "@/components/ui/button";
 import { Search, MapPin, Droplet, User, Phone, Activity, Clock, Building } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { getCompatibleRecipientGroups } from "@/lib/bloodMatching";
+
+function isCompatibleDonor(donorGroup: string, recipientGroup: string): boolean {
+    return getCompatibleRecipientGroups(donorGroup).includes(recipientGroup);
+}
 
 export default function OpenRequests() {
     const { user } = useAuth();
     const [requests, setRequests] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [donorBloodGroup, setDonorBloodGroup] = useState<string | null>(null);
 
     useEffect(() => {
         fetchRequests();
     }, []);
+
+    useEffect(() => {
+        if (!user) return;
+        supabase.from("donors").select("blood_group").eq("user_id", user.id).maybeSingle()
+            .then(({ data }) => setDonorBloodGroup(data?.blood_group ?? null));
+    }, [user]);
 
     const fetchRequests = async () => {
         try {
@@ -42,11 +58,16 @@ export default function OpenRequests() {
         }
 
         try {
-            // Create a donor match record (in a real app, logic would verify eligibility too)
-            const { data: donor } = await supabase.from("donors").select("id").eq("user_id", user.id).single();
+            const { data: donor } = await supabase.from("donors").select("id, blood_group").eq("user_id", user.id).single();
 
             if (!donor) {
                 toast.error("You need to register as a donor first.");
+                return;
+            }
+
+            const request = requests.find((r) => r.id === requestId);
+            if (request && !isCompatibleDonor(donor.blood_group, request.blood_group)) {
+                toast.error(`Your blood type (${donor.blood_group}) isn't compatible with this request`);
                 return;
             }
 
@@ -150,16 +171,45 @@ export default function OpenRequests() {
                                         </div>
                                     </div>
                                 </CardContent>
-                                <CardFooter className="pt-0 pb-4 px-4 flex gap-2">
-                                    <Button
-                                        className="flex-1 bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-                                        onClick={() => handleAcceptRequest(req.id)}
-                                    >
-                                        Accept Request
-                                    </Button>
+                                <CardFooter className="pt-0 pb-4 px-4 flex flex-col gap-2">
+                                  <div className="flex w-full gap-2">
+                                    {donorBloodGroup && !isCompatibleDonor(donorBloodGroup, req.blood_group) ? (
+                                        <Button className="flex-1" variant="outline" disabled title={`Your blood type (${donorBloodGroup}) can't safely donate to a ${req.blood_group} patient`}>
+                                            Not a Match
+                                        </Button>
+                                    ) : (
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button className="flex-1 bg-secondary hover:bg-secondary/90 text-secondary-foreground">
+                                                Accept Request
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Accept this blood request?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    You're committing to donate {req.blood_group} blood for {req.patient_name} at {req.hospital_name}
+                                                    {donorBloodGroup ? ` as a ${donorBloodGroup} donor` : ""}. This marks the request as fulfilled for everyone else, so only accept if you can actually donate soon.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleAcceptRequest(req.id)}>
+                                                    Yes, Accept
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                    )}
                                     <Button variant="outline" className="flex-1">
                                         View Details
                                     </Button>
+                                  </div>
+                                  {donorBloodGroup && !isCompatibleDonor(donorBloodGroup, req.blood_group) && (
+                                    <p className="text-xs text-muted-foreground text-center">
+                                      Your blood type ({donorBloodGroup}) isn't compatible with this request
+                                    </p>
+                                  )}
                                 </CardFooter>
                             </Card>
                         ))}

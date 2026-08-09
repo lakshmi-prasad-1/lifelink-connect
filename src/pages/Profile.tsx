@@ -10,6 +10,10 @@ import { User, Heart, Droplets, Trophy, Medal, Award, Star, Clock } from "lucide
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { Link } from "react-router-dom";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -98,12 +102,18 @@ export default function Profile() {
     return date.toLocaleDateString();
   };
 
+  const badgeTiers = [
+    { threshold: 0, label: "Donor", icon: Star },
+    { threshold: 30, label: "Life Saver", icon: Medal },
+    { threshold: 50, label: "Community Hero", icon: Award },
+    { threshold: 100, label: "Blood Champion", icon: Trophy },
+  ];
+
   const getBadge = (points: number) => {
-    if (points >= 100) return { label: "Blood Champion", icon: Trophy };
-    if (points >= 50) return { label: "Community Hero", icon: Award };
-    if (points >= 30) return { label: "Life Saver", icon: Medal };
-    return { label: "Donor", icon: Star };
+    return [...badgeTiers].reverse().find((tier) => points >= tier.threshold)!;
   };
+
+  const getNextTier = (points: number) => badgeTiers.find((tier) => points < tier.threshold) ?? null;
 
   if (loading) return <AppLayout><div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div></AppLayout>;
 
@@ -135,16 +145,31 @@ export default function Profile() {
               <div className="flex-1 text-center md:text-left">
                 <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                   <h2 className="font-heading text-xl font-bold">{donor.full_name}</h2>
-                  <Button
-                    size="sm"
-                    onClick={handleLogDonation}
-                    disabled={loggingDonation || !isEligible()}
-                    className="mt-2 md:mt-0"
-                  >
-                    {loggingDonation ? (
-                      <div className="animate-spin h-4 w-4 border-2 border-white/20 border-t-white rounded-full" />
-                    ) : "Log New Donation"}
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        disabled={loggingDonation || !isEligible()}
+                        className="mt-2 md:mt-0"
+                      >
+                        {loggingDonation ? (
+                          <div className="animate-spin h-4 w-4 border-2 border-white/20 border-t-white rounded-full" />
+                        ) : "Log New Donation"}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Log a completed donation?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This records that you donated {donor.blood_group} blood today, adds 10 points, and starts your 90-day recovery window before you're eligible again. Only confirm if you've actually completed a donation.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleLogDonation}>Confirm Donation</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">{donor.email} · {donor.phone}</p>
                 <p className="text-sm text-muted-foreground">{donor.city}</p>
@@ -190,6 +215,37 @@ export default function Profile() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Rewards Progress */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-warning" /> Rewards Progress
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const nextTier = getNextTier(donor.points);
+              if (!nextTier) {
+                return <p className="text-sm text-muted-foreground">You've reached the top tier — Blood Champion. Thank you for saving lives!</p>;
+              }
+              const prevThreshold = [...badgeTiers].reverse().find((t) => donor.points >= t.threshold)?.threshold ?? 0;
+              const span = nextTier.threshold - prevThreshold;
+              const progress = Math.min(100, Math.round(((donor.points - prevThreshold) / span) * 100));
+              return (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{donor.points} pts</span>
+                    <span className="text-muted-foreground">{nextTier.threshold - donor.points} pts to <span className="font-medium text-foreground">{nextTier.label}</span></span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                    <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+                  </div>
+                </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
 
         {/* Action Track */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

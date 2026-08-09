@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Heart, Droplets, Users, Shield, ArrowRight, Activity, Building2 } from "lucide-react";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 export default function Index() {
+  useDocumentTitle("Every Drop Saves a Life");
   return (
     <div className="min-h-screen bg-background">
       {/* Hero */}
@@ -10,7 +12,7 @@ export default function Index() {
         <div className="container flex items-center justify-between py-4">
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg overflow-hidden">
-              <img src="/favicon.png" alt="LifeLink Logo" className="h-full w-full object-cover" />
+              <img src="/icon-192.png" alt="LifeLink Logo" className="h-full w-full object-cover" />
             </div>
             <span className="font-heading text-lg font-bold">LifeLink</span>
           </div>

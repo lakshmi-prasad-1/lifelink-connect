@@ -7,8 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Heart, Mail, Lock, User, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 export default function SignUp() {
+  useDocumentTitle("Create Account");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,7 +44,7 @@ export default function SignUp() {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full overflow-hidden">
-            <img src="/favicon.png" alt="LifeLink Logo" className="h-full w-full object-cover" />
+            <img src="/icon-192.png" alt="LifeLink Logo" className="h-full w-full object-cover" />
           </div>
           <CardTitle className="font-heading text-2xl">Join LifeLink</CardTitle>
           <CardDescription>Create your account and start saving lives</CardDescription>

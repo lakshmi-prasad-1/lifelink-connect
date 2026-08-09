@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertTriangle, Plus, Clock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import type { Tables } from "@/integrations/supabase/types";
 
 const bloodGroups = ["", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -31,7 +32,27 @@ export default function EmergencyFeed() {
     setPosts(data ?? []);
   };
 
-  useEffect(() => { loadPosts(); }, []);
+  useEffect(() => {
+    loadPosts();
+
+    // Broadcast new emergencies live to anyone already on this page
+    const channel = supabase
+      .channel("emergency-feed-live")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "emergency_posts" },
+        (payload) => {
+          const post = payload.new as Tables<"emergency_posts">;
+          setPosts((prev) => (prev.some((p) => p.id === post.id) ? prev : [post, ...prev]));
+          if (post.urgency === "critical") {
+            toast.error(`Critical: ${post.title}`, { description: post.location || undefined });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
