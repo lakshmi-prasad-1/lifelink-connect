@@ -37,7 +37,7 @@ Intended users include:
 - Individual voluntary blood donors
 - Patients or family members creating blood requests
 - Hospital or community coordinators managing urgent needs
-- Blood bank and donation camp organizers
+- Blood bank and donation camp organizers.
 
 ## Key Features
 
