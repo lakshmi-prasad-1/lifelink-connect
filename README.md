@@ -67,12 +67,12 @@ Intended users include:
 - Authenticated profile page for donor status, donation history, and availability updates.
 
 ### User Experience
--tested and trusted
+
 - Protected application routes for authenticated features.
 - Responsive Tailwind CSS and shadcn/ui interface.
 - Toast notifications for user actions and errors.
 - SPA routing fallback for direct refresh and deep links.
-
+- With clean UI/UX interface
 ## Tech Stack
 
 | Layer | Technology |
